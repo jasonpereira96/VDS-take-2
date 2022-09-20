@@ -1,5 +1,15 @@
 <script>
 import Chart from "./components/chart.vue"
+import records from "./data/gun-deaths.json";
+import _ from "lodash";
+
+console.log(records.filter(r => !r.hasNull).filter(r => 20 <= r.age && r.age < 30))
+
+
+
+// import { BButton } from 'bootstrap-vue'
+
+// Vue.component('b-button', BButton)
 
 export default {
   data() {
@@ -13,6 +23,25 @@ export default {
   },
   computed: {
     data() {
+      return {
+        records
+      };
+    },
+    barChartData() {
+      let filteredRecords = records.filter(r => !r.hasNull);
+      return filteredRecords;
+    },
+    barChartOptions() {
+      return {
+        value: d => d.age,
+        label: "Age",
+        yLabel: "Deaths",
+        height: 500,
+        color: "steelblue",
+        thresholds: Math.max(10)
+      };
+    },
+    pieChartData() {
       return [{
         category: "Male",
         value: 50
@@ -48,14 +77,20 @@ export default {
       <div id="main">
         <div class="col">
           <div id="viz">
-            <Chart name="MAP" :data1="{}" :options="{}"></Chart>
+            <Chart name="MAP" :chartData="{}" :options="{}"></Chart>
           </div>
           <div id="legend"></div>
         </div>
         <div class="col">
           <h2> Illinois </h2>
           <div id="viz2">
-            <Chart name="PIE" :data1="data" :options="options"></Chart>
+            <Chart name="PIE" :chartData="pieChartData" :options="options"></Chart>
+          </div>
+          <div id="viz3">
+            <Chart name="HISTOGRAM" :chartData="barChartData" :options="barChartOptions"></Chart>
+          </div>
+          <div id="controls">
+            <b-button>Button</b-button>
           </div>
         </div>
       </div>
