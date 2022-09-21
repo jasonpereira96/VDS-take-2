@@ -4,7 +4,7 @@ import records from "./data/gun-deaths.json";
 import _ from "lodash";
 import { getStateCode, getFreqByState } from "./utils/process";
 
-import { scaleSequential, interpolatePiYG, interpolatePuRd, range, interpolate, interpolatePRGn, interpolateYlOrRd } from "d3";
+import { scaleSequential, scaleSequentialLog, scaleLog, interpolatePiYG, interpolatePuRd, range, interpolate, interpolatePRGn, interpolateYlOrRd } from "d3";
 
 const filterOptions = {
   ALL: 1,
@@ -156,15 +156,33 @@ export default {
       let min = Math.min(...Object.values(stateFreq));
       let max = Math.max(...Object.values(stateFreq));
       const isGenderFilterActive = this.isGenderFilterActive;
-      if (isGenderFilterActive) {
-        return scaleSequential()
-          .domain([0, 100])
-          .interpolator(this.interpolator);
+      const scale = this.isBlackHat ?  scaleSequentialLog : scaleSequential;
+      let s = scale().domain(isGenderFilterActive ? [0, 100] : [min, max]);
+
+      // return s.range(this.colorRange);
+      if (s.interpolate) {
+        // return s.range(this.colorRange);
+        return s.interpolate(this.interpolator);
       } else {
-        return scaleSequential()
-          .domain([min, max])
-          .interpolator(this.interpolator);
+        return s.interpolator(this.interpolator);
       }
+      
+    },
+    colorRange() {
+      const c = "#DC143C";
+      const filterColors = {
+        [filterOptions.ALL]: ["white", c],
+        [filterOptions.CITY]: ["white", "grey"],
+        [filterOptions.GENDER]: ["purple", "green"],
+        [filterOptions.AGE0_20]: ["white", c],
+        [filterOptions.AGE20_40]: ["white", c], 
+        [filterOptions.AGE40_60]: ["white", c], 
+        [filterOptions.AGE60_80]: ["white", c], 
+        [filterOptions.AGE80]: ["white", c],
+        [filterOptions.MALE]: ["white", "#0066CC"],
+        [filterOptions.FEMALE]: ["white", "#F9629F"]
+      };
+      return filterColors[this.filterSelected];
     },
     interpolator() {
       const c = "#DC143C";

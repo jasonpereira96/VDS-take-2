@@ -79,9 +79,9 @@ export default function map(data, {
 
   if (showBubbles) {
     const deathsByCity = getFreqByCity(data);
-
-    const bubbleScale = useSqrtScale ? scaleSqrt([0, Math.max(...deathsByCity.map(r => r.count))], [0, 40]) // 40 is maxRadius
-      : scaleSequential([0, Math.max(...deathsByCity.map(r => r.count))], [0, 40]);
+    let domainMax = Math.max(...deathsByCity.map(r => r.count));
+    // 40 is maxRadius
+    const bubbleScale = useSqrtScale ? scaleSqrt([0, domainMax], [0, 40]) : scaleSequential([0, domainMax], [0, 50]);
 
     // add circles to svg
     svg.selectAll("circle")
@@ -118,7 +118,7 @@ export default function map(data, {
   } else if (constantColor) {
     fillFunction = d => "#e0e0e0";
   } else {
-    fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? 0 : stateFreq[getStateCode(d.properties.name)]);
+    fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? 1 : stateFreq[getStateCode(d.properties.name)]);
   }
 
   let x = topojson.feature(us, us.objects.states).features;
