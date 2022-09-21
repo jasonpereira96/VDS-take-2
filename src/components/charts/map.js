@@ -38,6 +38,7 @@ export default function map(data, {
   showBubbles = false,
   useSqrtScale = true,
   cScale,
+  constantColor = null,
   isGenderFilterActive = false,
   vueChart
 }) {
@@ -114,6 +115,8 @@ export default function map(data, {
 
       return cScale((1 - (f / (m + f))) * 100);
     };
+  } else if (constantColor) {
+    fillFunction = d => "#e0e0e0";
   } else {
     fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? 0 : stateFreq[getStateCode(d.properties.name)]);
   }
@@ -130,6 +133,24 @@ export default function map(data, {
 
   states.append("title")
     .text(d => d.properties.name);
+
+  const statemesh = topojson.mesh(us, us.objects.states, (a, b) => a !== b);
+
+  const backgroundStroke = isGenderFilterActive ? "white" : "grey"; // stroke color for borders
+  let backgroundStrokeWidth // stroke width for borders
+  let backgroundStrokeOpacity // stroke width for borders
+  const backgroundStrokeLinecap = "round" // stroke line cap for borders
+  const backgroundStrokeLinejoin = "round" // stroke line join for borders
+
+  svg.append("path")
+    .attr("pointer-events", "none")
+    .attr("fill", "none")
+    .attr("stroke", backgroundStroke)
+    .attr("stroke-linecap", backgroundStrokeLinecap)
+    .attr("stroke-linejoin", backgroundStrokeLinejoin)
+    .attr("stroke-width", backgroundStrokeWidth)
+    .attr("stroke-opacity", backgroundStrokeOpacity)
+    .attr("d", path(statemesh));
 
 
   function reset() {

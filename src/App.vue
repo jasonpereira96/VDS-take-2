@@ -4,7 +4,7 @@ import records from "./data/gun-deaths.json";
 import _ from "lodash";
 import { getStateCode, getFreqByState } from "./utils/process";
 
-import { scaleSequential, interpolatePiYG, interpolatePuRd, range, interpolate } from "d3";
+import { scaleSequential, interpolatePiYG, interpolatePuRd, range, interpolate, interpolatePRGn, interpolateYlOrRd } from "d3";
 
 const filterOptions = {
   ALL: 1,
@@ -13,7 +13,10 @@ const filterOptions = {
   AGE20_40: 4, 
   AGE40_60: 5, 
   AGE60_80: 6, 
-  AGE80: 7
+  AGE80: 7,
+  MALE: 8,
+  FEMALE: 9,
+  CITY: 10
 }
 
 console.log(records.filter(r => !r.hasNull).filter(r => 20 <= r.age && r.age < 30))
@@ -32,20 +35,30 @@ export default {
         value: d => d.value,
         colors: ["cornflowerblue", "pink"],
       },
+      creditsModalOpen: false,
       activeState: null,
       records,
       isBlackHat: false,
       showBubbles: true,
-      filterSelected: filterOptions.ALL,
+      filterSelected: filterOptions.CITY,
       filterOptions: [
-        {value: filterOptions.ALL, text: "None"},
+        {value: filterOptions.CITY, text: "All deaths by City and State"},
+        {value: filterOptions.ALL, text: "All deaths State"},
         {value: filterOptions.GENDER, text: "Gender"},
+        {value: filterOptions.MALE, text: "Male Deaths by state"},
+        {value: filterOptions.FEMALE, text: "Female Deaths by state"},
         {value: filterOptions.AGE0_20, text: "Age Group: 0 - 20"},
         {value: filterOptions.AGE20_40, text: "Age Group: 20 - 40"},
         {value: filterOptions.AGE40_60, text: "Age Group: 40 - 60"},
         {value: filterOptions.AGE60_80, text: "Age Group: 60 - 80"},
         {value: filterOptions.AGE80, text: "Age Group: 80+"}
       ]
+    }
+  },
+  watch: {
+    showBubbles() {
+      if (this.showBubbles)
+        this.filterSelected = filterOptions.ALL;
     }
   },
   computed: {
@@ -101,6 +114,12 @@ export default {
         case filterOptions.AGE80: {
           return t.filter(r => 80 <= r.age);
         } break;
+        case filterOptions.MALE: {
+          return t.filter(r => r.gender === "M");
+        } break;
+        case filterOptions.FEMALE: {
+          return t.filter(r => r.gender === "F");
+        } break
         default: {
           return t;
         }
@@ -108,7 +127,7 @@ export default {
     },
     mapOptions() {
       const options = {};
-      options.showBubbles = this.showBubbles;
+      options.showBubbles = this.filterSelected === filterOptions.CITY;
       options.useSqrtScale = !this.isBlackHat;
       options.cScale = this.cScale
       options.isGenderFilterActive = this.isGenderFilterActive;
@@ -148,13 +167,29 @@ export default {
       }
     },
     interpolator() {
-      return this.filterSelected === filterOptions.GENDER ? interpolate("rgb(108,99,255)", "red") : interpolate("white", "grey");
+      const c = "#DC143C";
+      const filterColors = {
+        [filterOptions.ALL]: interpolateYlOrRd,
+        [filterOptions.CITY]: interpolate("white", "grey"),
+        [filterOptions.GENDER]: interpolatePRGn,
+        [filterOptions.AGE0_20]: interpolatePuRd,
+        [filterOptions.AGE20_40]: interpolatePuRd, 
+        [filterOptions.AGE40_60]: interpolatePuRd, 
+        [filterOptions.AGE60_80]: interpolatePuRd, 
+        [filterOptions.AGE80]: interpolatePuRd,
+        [filterOptions.MALE]: interpolate("white", "blue"),
+        [filterOptions.FEMALE]: interpolate("white", "#F9629F")
+      };
+      return filterColors[this.filterSelected];
     }
   },
   methods: {
     onStateClick(stateName) {
       console.log(stateName);
       this.activeState = stateName;
+    },
+    onCreditsClick() {
+      this.creditsModalOpen = !this.creditsModalOpen;
     }
   }
 }
@@ -174,11 +209,16 @@ export default {
 
   <body>
     <div id="app">
-      <div class="1navbar">
-        White Hat
-        <b-form-checkbox v-model="isBlackHat" switch>
-        Black Hat
-        </b-form-checkbox>
+      <div class="main-navbar">
+        <div class="title"> Change radius scale and log scale and normalize data add male female maps </div>
+        <div class="switch-wrapper">
+          <span class="wh">White Hat</span>
+          <b-form-checkbox v-model="isBlackHat" switch></b-form-checkbox>
+          <span>Black Hat</span>
+        </div>
+        <div class="credits-button-wrapper">
+          <b-button @click="onCreditsClick">Credits and Write-ups</b-button>
+        </div>        
       </div>
 
       <div id="main">
@@ -192,9 +232,6 @@ export default {
         </div>
         <div class="col">
           <b-form-select v-model="filterSelected" :options="filterOptions" size="sm"></b-form-select>
-            <b-form-checkbox v-model="showBubbles" switch>
-              Show Deaths by City
-            </b-form-checkbox>
           <h2> {{ activeState === null ? "USA" : activeState + " (Total Deaths)"}} </h2>
           <div id="viz2">
             <Chart name="PIE" :chartData="pieChartData" :options="options"></Chart>
@@ -209,19 +246,49 @@ export default {
         </div>
       </div>
     </div>
+    <b-modal id="modal-1" title="Credits and Write-ups" v-model="creditsModalOpen" hide-footer>
+      <h3>Credits</h3>
+      <ul>
+        <li>D3 Gallery</li>
+        <li>D3 Gallery</li>
+        <li>D3 Gallery</li>
+        <li>D3 Gallery</li>
+      </ul>
+      <h3>Black Hat</h3>
+      <p class="my-4">Hello from modal!</p>
+      <h3>White Hat</h3>
+      <p class="my-4">Hello from modal!</p>
+    </b-modal>
   </body>
 </template>
 
 <style scoped>
 body {
+}
+.main-navbar {
+  padding: 10px;
+  display: flex;
+}
+#main {
+  display: flex;
   padding: 10px;
 }
-
-#main {
-    display: flex;
+.title {
+  flex: 1;
+}
+.switch-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.switch-wrapper, .credits-button-wrapper {
+  padding-left: 10px;
+}
+span.wh {
+  padding-right: 10px;
 }
 .col {
-    flex: 1;
+  flex: 1;
 }
 </style>
 <style>
