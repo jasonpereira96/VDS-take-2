@@ -1,7 +1,7 @@
-import {select, zoom, create, geoPath, json, zoomIdentity, pointer, zoomTransform, geoAlbers, scaleSqrt} from "d3";
+import { select, zoom, create, geoPath, json, zoomIdentity, pointer, zoomTransform, geoAlbers, scaleSqrt } from "d3";
 import { scaleSequential, interpolatePiYG, interpolatePuRd, range } from "d3";
 import us_data from "./../../data/counties-albers-10m.json";
-import { getFreqByState, getFreqBySex, getFreqByCity } from "./../../utils/process"
+import { getFreqByState, getFreqBySex, getFreqByCity, getStateCode } from "./../../utils/process"
 import circlarLegend from "./circularLegend"
 import stateMapping from "./../../data/stateCodes"
 import legend from "./legend";
@@ -19,27 +19,30 @@ let us = us_data
 // .projection(projection);
 const path = geoPath();
 let projection = geoAlbers().scale(1300).translate([487.5, 305]);
-    
-console.log(getFreqBySex())
-const deathsBySex = getFreqBySex();
-const deathsByCity = getFreqByCity();
+
 
 let radius = scaleSqrt([0, Math.max(...getFreqByCity().map(r => r.count))], [0, 40]); // 40 is maxRadius
 
-    
+
 
 const _d3 = {
-    select, zoom, create, geoPath, json, zoomIdentity, pointer, zoomTransform
+  select, zoom, create, geoPath, json, zoomIdentity, pointer, zoomTransform
 }
 
-const stateFreq = getFreqByState();
 
 
 
 export default function map(data, {
   width = 975,
-  height = 610
+  height = 610,
+  showBubbles = false,
+  useSqrtScale = true,
+  cScale,
+  isGenderFilterActive = false,
+  vueChart
 }) {
+
+  const stateFreq = getFreqByState(data);
 
   const zoom = _d3.zoom()
     .scaleExtent([1, 8])
@@ -53,25 +56,13 @@ export default function map(data, {
 
   const g = svg.append("g");
 
-  var cScale = scaleSequential()
-    .domain([Math.min(...Object.values(stateFreq)), Math.max(...Object.values(stateFreq))])
-    .interpolator(interpolatePuRd);
+  // var cScale = scaleSequential()
+    // .domain([Math.min(...Object.values(stateFreq)), Math.max(...Object.values(stateFreq))])
+    // .interpolator(interpolator);
 
 
-  const states = g.append("g")
-    .attr("cursor", "pointer")
-    .selectAll("path")
-    .data(topojson.feature(us, us.objects.states).features)
-    .join("path")
-    .attr("fill", (d, i) => {
-      return cScale(stateFreq[stateMapping[d.properties.name]]);
-    })
-    .on("click", onClick)
-    .attr("d", path);
-
-  states.append("title")
-    .text(d => d.properties.name);
-
+ 
+  
   g.append("path")
     .attr("fill", "none")
     .attr("stroke", "white")
@@ -84,55 +75,62 @@ export default function map(data, {
   //     .datum(getHotspots())
   //     .attr("d", _d3.geoPath(projection).pointRadius(20));
 
-  // add circles to svg
-  svg.selectAll("circle")
-    // .data([aaa, bbb]).enter()
-    .data(deathsByCity).enter()
-    .append("circle")
-    .attr("cx", function (d) { return projection([d.lng, d.lat])[0]; })
-    .attr("cy", function (d) { return projection([d.lng, d.lat])[1]; })
-    .attr("r", function (d) { return radius(d.count) })
-    .attr("fill", "red")
-    .attr("fill-opacity", 0.5)
-    .append("title").text(d => d.city);
 
-  circlarLegend(svg, {
-    width,
-    height,
-    radius: radius
-  });
+  if (showBubbles) {
+    const deathsByCity = getFreqByCity(data);
 
-  /*
-  svg.append("g")
+    const bubbleScale = useSqrtScale ? scaleSqrt([0, Math.max(...deathsByCity.map(r => r.count))], [0, 40]) // 40 is maxRadius
+      : scaleSequential([0, Math.max(...deathsByCity.map(r => r.count))], [0, 40]);
+
+    // add circles to svg
+    svg.selectAll("circle")
+      // .data([aaa, bbb]).enter()
+      .data(deathsByCity).enter()
+      .append("circle")
+      .attr("cx", function (d) { return projection([d.lng, d.lat])[0]; })
+      .attr("cy", function (d) { return projection([d.lng, d.lat])[1]; })
+      .attr("r", function (d) { return bubbleScale(d.count) })
+      .attr("class", "city-circle")
       .attr("fill", "red")
       .attr("fill-opacity", 0.5)
-      .attr("stroke", "white")
-      .attr("stroke-width", 0.5)
-      // .attr("stroke-opacity", strokeOpacity)
-      .selectAll("circle")
-      // .data(range(data.length))
-      .data(getFreqByCity()).enter()
-      //   .filter(i => P[i])
-      //   .sort((i, j) => d3.descending(V[i], V[j])))
-    .join("circle")
-      // .attr("transform", projection == null
-      //     ? i => `translate(${P[i]})`
-      //     : i => `translate(${projection(P[i])})`)
-      .attr("r", i => radius(i > i.count))
-      // .call(T ? circle => circle.append("title").text(i => T[i]) : () => {}); */
+      .append("title").text(d => d.city);
 
-  // svg.selectAll(".pin")
-  //     .data(getHotspots())
-  //     .enter().append("circle", ".pin")
-  //     .attr("r", 20)
-  //     .attr("transform", function(d) {
-  //     return "translate(" + projection([
-  //         d.long,
-  //         d.lat
-  //     ]) + ")"
-  //     });
 
-  // svg.call(zoom);
+    circlarLegend(svg, {
+      width,
+      height,
+      radius: bubbleScale
+    });
+  }
+
+  let fillFunction, freqBySex;
+  if (isGenderFilterActive) {
+    freqBySex = getFreqBySex(data);
+    fillFunction = (d, i) => {
+      let m = freqBySex[getStateCode(d.properties.name)]?.M;
+      if (!m) return;
+
+      let f = freqBySex[getStateCode(d.properties.name)].F;
+
+      return cScale((1 - (f / (m + f))) * 100);
+    };
+  } else {
+    fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? 0 : stateFreq[getStateCode(d.properties.name)]);
+  }
+
+  let x = topojson.feature(us, us.objects.states).features;
+  const states = g.append("g")
+  .attr("cursor", "pointer")
+  .selectAll("path")
+  .data(topojson.feature(us, us.objects.states).features)
+  .join("path")
+  .attr("fill", fillFunction)
+  .on("click", onClick)
+  .attr("d", path);
+
+  states.append("title")
+    .text(d => d.properties.name);
+
 
   function reset() {
     states.transition().style("fill", null);
@@ -144,9 +142,9 @@ export default function map(data, {
   }
 
   function onClick(event, d) {
+    vueChart.$emit("state-clicked", d.properties.name);
     const [[x0, y0], [x1, y1]] = path.bounds(d);
     event.stopPropagation();
-    console.log(d)
   }
 
   function zoomed(event) {

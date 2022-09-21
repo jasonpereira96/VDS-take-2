@@ -1,11 +1,10 @@
 import gunDeaths from "./../data/gun-deaths.json"
 import _ from "lodash"
+import stateCodes from "../data/stateCodes";
 
 
 
-export function getFreqByState() {
-    let records = gunDeaths.filter(d => !d.hasNull);
-
+export function getFreqByState(records) {
     return records.reduce((acc, record) => {
         if (acc[record.state] === undefined) {
             acc[record.state] = 1;
@@ -16,9 +15,7 @@ export function getFreqByState() {
     }, {});
 }
 
-export function getFreqBySex() {
-    let records = gunDeaths.filter(d => !d.hasNull);
-
+export function getFreqBySex(records) {
     let acc = records.reduce((acc, record) => {
         acc[record.state] = {
             M: 0,
@@ -38,8 +35,7 @@ export function getFreqBySex() {
 }
 
 
-export function getFreqByCity() {
-    let records = gunDeaths.filter(d => !d.hasNull);
+export function getFreqByCity(records) {
 
     let groupedByCity = _.groupBy(records, record => record.city);
 
@@ -52,4 +48,8 @@ export function getFreqByCity() {
             count: records.length
         };
     });
+}
+
+export function getStateCode(stateName) {
+    return stateCodes[stateName];
 }

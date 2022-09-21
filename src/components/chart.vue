@@ -4,6 +4,8 @@ import pieChart from "./charts/pieChart"
 import map from "./charts/map"
 import BarChart from "./charts/barchart"
 import Histogram from "./charts/histogram"
+import legend from "./charts/legend.js"
+
 
 export default {
   props: {
@@ -25,8 +27,16 @@ export default {
       greeting: 'Hello World!'
     }
   },
+  watch: {
+    chartData() {
+      this.renderChart();
+    },
+    options() {
+      this.renderChart();
+    }
+  },
   mounted() {
-    this.renderChart()
+    this.renderChart();
   },
   methods: {
     renderChart() {
@@ -40,13 +50,16 @@ export default {
           chart = pieChart(this.chartData, this.options);
         } break;
         case "MAP": {
-          chart = map([], {});
+          chart = map(this.chartData, {...this.options, vueChart: this});
         } break;
         case "BAR": {
           chart = BarChart(this.chartData, this.options);
         } break;
         case "HISTOGRAM": {
           chart = Histogram(this.chartData, this.options);
+        } break;
+        case "LEGEND": {
+          chart = legend(this.chartData, this.options);
         } break;
       }
       container.append(chart);
