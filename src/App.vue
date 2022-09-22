@@ -35,6 +35,7 @@ export default {
         value: d => d.value,
         colors: ["cornflowerblue", "pink"],
       },
+      normalize: false,
       creditsModalOpen: false,
       activeState: null,
       records,
@@ -43,8 +44,8 @@ export default {
       filterSelected: filterOptions.CITY,
       filterOptions: [
         {value: filterOptions.CITY, text: "All deaths by City and State"},
-        {value: filterOptions.ALL, text: "All deaths State"},
-        {value: filterOptions.GENDER, text: "Gender"},
+        {value: filterOptions.ALL, text: "All deaths by State"},
+        // {value: filterOptions.GENDER, text: "Gender", disabled: this.isBlackHat },
         {value: filterOptions.MALE, text: "Male Deaths by state"},
         {value: filterOptions.FEMALE, text: "Female Deaths by state"},
         {value: filterOptions.AGE0_20, text: "Age Group: 0 - 20"},
@@ -59,6 +60,11 @@ export default {
     showBubbles() {
       if (this.showBubbles)
         this.filterSelected = filterOptions.ALL;
+    },
+    isBlackHat() {
+      if (this.isBlackHat) {
+        this.normalize = false;
+      }
     }
   },
   computed: {
@@ -131,6 +137,7 @@ export default {
       options.useSqrtScale = !this.isBlackHat;
       options.cScale = this.cScale
       options.isGenderFilterActive = this.isGenderFilterActive;
+      options.normalize = this.normalize;
       return options;
     },
     legendData() {
@@ -139,20 +146,20 @@ export default {
       if (isGenderFilterActive) {
         min = 0; max = 100;
       } else {
-        const stateFreq = getFreqByState(this.mapData);
+        const stateFreq = getFreqByState(this.mapData, this.normalize);
         min = Math.min(...Object.values(stateFreq));
         max = Math.max(...Object.values(stateFreq));
       }
       return {
         color: this.cScale,
-        title: isGenderFilterActive ? "Percentage of Male deaths" : "Gun deaths by state"
+        title: "Gun deaths by state " + (this.normalize ? "(per 1000 people)" : "" )
       }
     },
     isGenderFilterActive() {
       return this.filterSelected === filterOptions.GENDER;
     },
     cScale() {
-      const stateFreq = getFreqByState(this.mapData);
+      const stateFreq = getFreqByState(this.mapData, this.normalize);
       let min = Math.min(...Object.values(stateFreq));
       let max = Math.max(...Object.values(stateFreq));
       const isGenderFilterActive = this.isGenderFilterActive;
@@ -249,8 +256,9 @@ export default {
           </div>
         </div>
         <div class="col">
+          <b-form-checkbox v-if= "!isBlackHat" v-model="normalize" switch>Normalize by state population</b-form-checkbox>
           <b-form-select v-model="filterSelected" :options="filterOptions" size="sm"></b-form-select>
-          <h2> {{ activeState === null ? "USA" : activeState + " (Total Deaths)"}} </h2>
+          <h2> {{ activeState === null ? "USA (Click on a state for more info)" : activeState + " (Total Deaths)"}} </h2>
           <div id="viz2">
             <Chart name="PIE" :chartData="pieChartData" :options="options"></Chart>
           </div>

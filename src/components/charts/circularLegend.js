@@ -8,7 +8,7 @@ export default function (svg, {
 }) {
     const legend = svg.append("g")
         .attr("fill", "#777")
-        .attr("transform", `translate(${legendX},${legendY})`)
+        .attr("transform", `translate(${legendX},${legendY - 50})`)
         .attr("text-anchor", "middle")
         .style("font", "10px sans-serif")
         .selectAll("g")
@@ -25,6 +25,11 @@ export default function (svg, {
         .attr("y", d => -2 * radius(d))
         .attr("dy", "1.3em")
         .text(radius.tickFormat(4, "s"));
+
+    legend.append("text")
+        .attr("y", - height + legendY + 10)
+        .attr("dy", "1.3em")
+        .text("No of deaths");
 
     return svg;
 }

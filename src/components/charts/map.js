@@ -21,9 +21,6 @@ const path = geoPath();
 let projection = geoAlbers().scale(1300).translate([487.5, 305]);
 
 
-let radius = scaleSqrt([0, Math.max(...getFreqByCity().map(r => r.count))], [0, 40]); // 40 is maxRadius
-
-
 
 const _d3 = {
   select, zoom, create, geoPath, json, zoomIdentity, pointer, zoomTransform
@@ -39,11 +36,12 @@ export default function map(data, {
   useSqrtScale = true,
   cScale,
   constantColor = null,
+  normalize = false,
   isGenderFilterActive = false,
   vueChart
 }) {
 
-  const stateFreq = getFreqByState(data);
+  const stateFreq = getFreqByState(data, normalize);
 
   const zoom = _d3.zoom()
     .scaleExtent([1, 8])
@@ -118,7 +116,8 @@ export default function map(data, {
   } else if (constantColor) {
     fillFunction = d => "#e0e0e0";
   } else {
-    fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? 1 : stateFreq[getStateCode(d.properties.name)]);
+    let min = Math.min(...Object.values(stateFreq));
+    fillFunction = (d, i) => cScale(stateFreq[getStateCode(d.properties.name)] === undefined ? min : stateFreq[getStateCode(d.properties.name)]);
   }
 
   let x = topojson.feature(us, us.objects.states).features;

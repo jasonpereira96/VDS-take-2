@@ -15,3 +15,5 @@ app.use(BootstrapVue3)
 app.component('Chart', Chart)
 
 app.mount('#app')
+
+window.app = app;
