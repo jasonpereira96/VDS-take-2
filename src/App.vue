@@ -244,7 +244,7 @@ export default {
         <div class="title"> <h2>{{ title }} </h2></div>
         <div class="switch-wrapper">
           <span class="wh">White Hat</span>
-          <b-form-checkbox v-model="isBlackHat" switch></b-form-checkbox>
+          <b-form-checkbox v-model="isBlackHat" switch size="lg"></b-form-checkbox>
           <span>Black Hat</span>
         </div>
         <div class="credits-button-wrapper">
