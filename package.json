@@ -1,5 +1,6 @@
 {
   "name": "vue-project",
+  "publicPath": "/VDS-take-2/",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
