@@ -206,6 +206,12 @@ export default {
         [filterOptions.FEMALE]: interpolate("white", "#F9629F")
       };
       return filterColors[this.filterSelected];
+    },
+    title() {
+      return this.isBlackHat ? "California leads the charge in gun violence!" : "Gun deaths in the US"
+    },
+    bodyClass() {
+      return this.isBlackHat ? "dark" : ""
     }
   },
   methods: {
@@ -223,7 +229,7 @@ export default {
 
 <template>
   <head>
-    <title>My homepage</title>
+    <title>Gun Deaths in the US</title>
     <meta charset="UTF-8">
     <meta http-equiv="cache-control" content="no-cache" />
     <meta http-equiv="pragma" content="no-cache" />
@@ -232,17 +238,17 @@ export default {
       content="width=device-width,user-scalable=0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
   </head>
 
-  <body>
+  <body :class="bodyClass">
     <div id="app">
       <div class="main-navbar">
-        <div class="title"> Change radius scale and log scale and normalize data add male female maps </div>
+        <div class="title"> <h2>{{ title }} </h2></div>
         <div class="switch-wrapper">
           <span class="wh">White Hat</span>
           <b-form-checkbox v-model="isBlackHat" switch></b-form-checkbox>
           <span>Black Hat</span>
         </div>
         <div class="credits-button-wrapper">
-          <b-button @click="onCreditsClick">Credits and Write-ups</b-button>
+          <b-button class="btn-warning" @click="onCreditsClick">Credits and Write-ups</b-button>
         </div>        
       </div>
 
@@ -256,7 +262,7 @@ export default {
           </div>
         </div>
         <div class="col">
-          <b-form-checkbox v-if= "!isBlackHat" v-model="normalize" switch>Normalize by state population</b-form-checkbox>
+          <b-form-checkbox v-if= "!isBlackHat" v-model="normalize" switch><b>Normalize by state population</b></b-form-checkbox>
           <b-form-select v-model="filterSelected" :options="filterOptions" size="sm"></b-form-select>
           <h2> {{ activeState === null ? "USA (Click on a state for more info)" : activeState + " (Total Deaths)"}} </h2>
           <div id="viz2">
@@ -272,18 +278,73 @@ export default {
         </div>
       </div>
     </div>
-    <b-modal id="modal-1" title="Credits and Write-ups" v-model="creditsModalOpen" hide-footer>
+    <b-modal id="modal-1" title="Credits and Write-ups" v-model="creditsModalOpen" hide-footer size="lg">
       <h3>Credits</h3>
+      <p class="my-4">The following resources were used and referenced while building this site:</p>
       <ul>
-        <li>D3 Gallery</li>
-        <li>D3 Gallery</li>
-        <li>D3 Gallery</li>
-        <li>D3 Gallery</li>
+        <li><a target="_blank" href="https://observablehq.com/@d3/gallery">D3 Gallery</a></li>
+        <li><a target="_blank" href="https://d3js.org/">D3 Docs</a></li>
+        <li><a target="_blank" href="https://vuejs.org/guide/introduction.html">Vue JS</a></li>
+        <li><a target="_blank" href="https://github.com/cdmoro/bootstrap-vue-3">Bootstrap</a></li>
+        <li><a target="_blank" href="https://github.com/topojson/us-atlas">Github for Map data</a></li>
+      </ul>
+      <h3>Visual encoding:</h3>
+      <ul>
+        <li>
+          I have used a bubble map to plot death data by city.
+        </li>
+        <li>
+          A chloropleth map to plot deaths by state.
+        </li>
+        <li>
+          For gender distribution, as there are only 2 genders, I have used a pie chart because that seemed by far the
+          most intuitive and easy to understand way to plot gender distribution.
+        </li>
+        <li>
+          I have used a histogram to plot age distribution which gives the user a birds-eye view of 
+          the distribution of deaths by age.
+        </li>
       </ul>
       <h3>Black Hat</h3>
-      <p class="my-4">Hello from modal!</p>
+      <p class="my-4">Reasons why this visualization is black hat and misleading:</p>
+      <ul>
+        <li>Use of <b>logrimathic scale for colour encoding</b> which is confusing and misleading to users. 
+        Most of the general public are not familiar with the logrimathic scale. Combining that with a color encoding
+        makes the number of gun deaths in most states look greater than they actually are and confuses the hell out of the viewer.
+        It also makes the difference between gun death rates between states hard to comprehend.
+        </li>
+        <li>
+        Use of a <b>linear scale to plot the radius of the circle</b>, rather than a square root scale. Since the area of a circle marker
+        denotes the relative value of that quantity, a scale that is propotional to the area of the marker (a square root scale)
+        would be appropriate for this use case. However, I have used a linear scale in the black hat version which is misleading.
+        </li>
+        <li>
+        Has a <b>misleading title</b> which will skew the viewer's perception of the viz before they even look at it.
+        </li>
+        <li>
+        <b>Data is not normalized by population. </b>This results in a distribution of gun deaths that mimics the population
+        distribution of the US. In the white hat version, there is option for the user to view a normalized view of the data.
+        </li>
+      </ul>
       <h3>White Hat</h3>
-      <p class="my-4">Hello from modal!</p>
+      <p class="my-4">Reasons why this visualization is black hat and misleading:</p>
+      <ul>
+        <li>
+          Used a linear scale for colour encoding for the chloropleth.
+        </li>
+        <li>
+        Used a square root scale to compute the value of the radius of the circle. This makes the area of the circle marker actually
+        propotional to the value of the data point.
+        </li>
+        <li>
+        Has a neutral title that does not mislead the viewer.
+        </li>
+        <li>
+        There is a switch which gives the viewer an option to view the data normalized by state population. This ensures that the viewer
+        does not conclude that states with larger populations, like California or New York actually have high gun death rates. Of course,
+        the viewer can view total deaths as well.
+        </li>
+      </ul>
     </b-modal>
   </body>
 </template>
@@ -293,7 +354,20 @@ body {
 }
 .main-navbar {
   padding: 10px;
+  color: white;
   display: flex;
+  background-color: darkblue;
+}
+.dark .main-navbar {
+  background-color: crimson;
+}
+
+button {
+  /* background-color: crimson; */
+  font-weight: bold;
+}
+.dark button {
+  /* background-color: darkblue; */
 }
 #main {
   display: flex;
@@ -302,7 +376,7 @@ body {
 .title {
   flex: 1;
 }
-.switch-wrapper {
+.switch-wrapper, .credits-button-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -320,5 +394,8 @@ span.wh {
 <style>
 .city-circle {
   pointer-events: none;
+}
+.main.form-check.form-switch {
+  background-color: khaki;
 }
 </style>
