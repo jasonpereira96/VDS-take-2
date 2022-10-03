@@ -327,7 +327,7 @@ export default {
         </li>
       </ul>
       <h3>White Hat</h3>
-      <p class="my-4">Reasons why this visualization is black hat and misleading:</p>
+      <p class="my-4">Reasons why this visualization is white hat:</p>
       <ul>
         <li>
           Used a linear scale for colour encoding for the chloropleth.
@@ -395,7 +395,7 @@ span.wh {
 .city-circle {
   pointer-events: none;
 }
-.main.form-check.form-switch {
+#main .form-check.form-switch {
   background-color: khaki;
 }
 </style>
